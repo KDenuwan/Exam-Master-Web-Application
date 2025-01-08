@@ -1,196 +1,289 @@
+// quiz.js
 let currentStage = 1;
 let currentQuestion = 0;
 let score = 0;
-let canProceed = false;
 let timer;
-let timeLeft;
+let soundEnabled = true;
 
-// Initialize the quiz
-function initializeQuiz() {
-    document.getElementById('welcome-screen').classList.remove('hidden');
-    document.getElementById('quiz-screen').classList.add('hidden');
-    document.getElementById('result-screen').classList.add('hidden');
-    document.getElementById('certificate-screen').classList.add('hidden');
+// Debug function to check if everything is loaded
+function debugInit() {
+    console.log('Quiz initialization started');
+    console.log('Current stage:', currentStage);
+    console.log('Questions loaded:', questions !== undefined);
+    console.log('Welcome screen:', document.getElementById('welcome-screen') !== null);
+    console.log('Quiz screen:', document.getElementById('quiz-screen') !== null);
 }
 
-// Start the quiz for a specific stage
-function startQuiz(stage) {
-    currentStage = stage;
-    currentQuestion = 0;
-    score = 0;
-    hideAllScreens();
-    document.getElementById('quiz-screen').classList.remove('hidden');
-    loadQuestion();
-    updateProgressBar();
-    startTimer();
+// Get questions for current stage
+function getCurrentStageQuestions() {
+    console.log('Getting questions for stage:', currentStage);
+    return questions[`stage${currentStage}`];
 }
 
-// Load question
-function loadQuestion() {
-    // Clear previous feedback
-    const feedback = document.getElementById('feedback');
-    if (feedback) {
-        feedback.style.display = 'none';
+// Start quiz function
+function startQuiz() {
+    console.log('Starting quiz...');
+    try {
+        const welcomeScreen = document.getElementById('welcome-screen');
+        const quizScreen = document.getElementById('quiz-screen');
+        
+        if (!welcomeScreen || !quizScreen) {
+            console.error('Required screens not found');
+            return;
+        }
+
+        welcomeScreen.classList.add('hidden');
+        quizScreen.classList.remove('hidden');
+        
+        const currentStageElement = document.getElementById('current-stage');
+        if (currentStageElement) {
+            currentStageElement.textContent = currentStage;
+        }
+
+        showStageTransition();
+        setTimeout(() => {
+            loadQuestion();
+            startTimer();
+        }, 1500);
+    } catch (error) {
+        console.error('Error starting quiz:', error);
     }
-
-    const questionData = quizQuestions[`stage${currentStage}`][currentQuestion];
-    document.getElementById('current-stage').textContent = currentStage;
-    document.getElementById('current-question').textContent = currentQuestion + 1;
-    document.getElementById('question-text').textContent = `${currentQuestion + 1}. ${questionData.question}`;
-    
-    const optionsContainer = document.getElementById('options-container');
-    optionsContainer.innerHTML = '';
-    questionData.options.forEach((option, index) => {
-        const button = document.createElement('button');
-        button.className = 'option-btn';
-        button.textContent = `${['a', 'b', 'c', 'd'][index]}) ${option}`;
-        button.onclick = () => selectAnswer(index);
-        optionsContainer.appendChild(button);
-    });
-    
-    document.getElementById('next-btn').classList.add('hidden');
-    canProceed = false;
 }
 
-// Handle answer selection
-function selectAnswer(selectedIndex) {
-    if (canProceed) return;
-    
-    const questionData = quizQuestions[`stage${currentStage}`][currentQuestion];
-    const correct = questionData.correct;
+// Load question function
+function loadQuestion() {
+    console.log('Loading question:', currentQuestion);
+    try {
+        const currentQuestions = getCurrentStageQuestions();
+        if (!currentQuestions) {
+            console.error('No questions found for current stage');
+            return;
+        }
+
+        const question = currentQuestions[currentQuestion];
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.querySelector('.options-container');
+
+        if (!questionText || !optionsContainer) {
+            console.error('Question elements not found');
+            return;
+        }
+
+        questionText.textContent = question.question;
+        optionsContainer.innerHTML = '';
+        
+        question.options.forEach((option, index) => {
+            const button = document.createElement('button');
+            button.className = 'option-btn';
+            button.textContent = option;
+            button.onclick = () => checkAnswer(index);
+            optionsContainer.appendChild(button);
+        });
+
+        updateProgress();
+    } catch (error) {
+        console.error('Error loading question:', error);
+    }
+}
+
+
+// Check answer function
+function checkAnswer(selectedIndex) {
+    const questions = getCurrentStageQuestions();
+    const question = questions[currentQuestion];
     const buttons = document.querySelectorAll('.option-btn');
     
-    buttons.forEach(btn => btn.disabled = true);
+    buttons.forEach(button => button.style.pointerEvents = 'none');
     
-    if (selectedIndex === correct) {
+    if (selectedIndex === question.correct) {
         buttons[selectedIndex].classList.add('correct');
-        showFeedback('Correct! 🎉', 'success');
-        playSound('correct');
-        score++;
+        showFeedback(true);
+        updateScore(10);
+        playSound('correct-sound');
+        createConfetti();
     } else {
         buttons[selectedIndex].classList.add('wrong');
-        buttons[correct].classList.add('correct');
-        showFeedback('Wrong! The correct answer is: ' + 
-            questionData.options[correct], 'error');
-        playSound('wrong');
+        buttons[question.correct].classList.add('correct');
+        showFeedback(false);
+        playSound('wrong-sound');
     }
-    
-    document.getElementById('next-btn').classList.remove('hidden');
-    canProceed = true;
-    updateProgressBar();
+
+    setTimeout(() => nextQuestion(), 1500);
 }
 
-// Move to next question
+// Next question function
 function nextQuestion() {
-    if (!canProceed) return;
-    
     currentQuestion++;
-    if (currentQuestion >= 10) {
-        showResults();
+    const questions = getCurrentStageQuestions();
+    
+    if (currentQuestion >= questions.length) {
+        showStageResults();
     } else {
-        loadQuestion();
+        const questionElement = document.getElementById('question-text');
+        questionElement.style.transform = 'translateX(-100%)';
+        questionElement.style.opacity = '0';
+        
+        setTimeout(() => {
+            loadQuestion();
+            questionElement.style.transform = 'translateX(0)';
+            questionElement.style.opacity = '1';
+        }, 500);
     }
+}
+
+// Update progress
+function updateProgress() {
+    const questions = getCurrentStageQuestions();
+    const progress = ((currentQuestion + 1) / questions.length) * 100;
+    document.getElementById('progress-bar-fill').style.width = `${progress}%`;
+    document.getElementById('current-question').textContent = currentQuestion + 1;
+    document.getElementById('score-display').textContent = `Score: ${score}/100`;
 }
 
 // Show feedback
-function showFeedback(message, type) {
-    const feedback = document.getElementById('feedback');
-    feedback.textContent = message;
-    feedback.className = `feedback ${type}`;
-    feedback.style.display = 'block';
+function showFeedback(isCorrect) {
+    const overlay = document.querySelector('.feedback-overlay');
+    const content = overlay.querySelector('.feedback-content');
+    
+    content.querySelector('h2').textContent = isCorrect ? 'Correct!' : 'Wrong!';
+    content.querySelector('p').textContent = isCorrect ? 
+        'Great job! Keep going!' : 'Don\'t worry, keep trying!';
+    
+    overlay.classList.add('active');
+    setTimeout(() => overlay.classList.remove('active'), 1500);
 }
 
-// Update progress bar
-function updateProgressBar() {
-    const progress = (currentQuestion / 10) * 100;
-    document.getElementById('progress-bar-fill').style.width = `${progress}%`;
-    document.getElementById('score-display').textContent = `Score: ${score}/10`;
+// Update score
+function updateScore(points) {
+    score += points;
+    const scoreElements = document.querySelectorAll('.current-score');
+    scoreElements.forEach(element => {
+        element.textContent = score;
+        element.parentElement.classList.add('score-update');
+        setTimeout(() => element.parentElement.classList.remove('score-update'), 500);
+    });
+    updateProgress();
 }
 
-// Show results
-function showResults() {
-    clearInterval(timer);
-    hideAllScreens();
-    const resultScreen = document.getElementById('result-screen');
-    resultScreen.classList.remove('hidden');
-    document.getElementById('score').textContent = score;
-
-    const resultMessage = document.getElementById('result-message');
-    const nextStageBtn = document.getElementById('next-stage-btn');
-    const retryBtn = document.getElementById('retry-btn');
-    const certificateBtn = document.getElementById('get-certificate-btn');
-
-    if (score >= 5) {
-        resultMessage.textContent = `Congratulations! You passed Stage ${currentStage} with a score of ${score}/10`;
-        playSound('success');
-        
-        if (currentStage === 3) {
-            certificateBtn.classList.remove('hidden');
-            nextStageBtn.classList.add('hidden');
-        } else {
-            nextStageBtn.classList.remove('hidden');
-            certificateBtn.classList.add('hidden');
-        }
-        retryBtn.classList.add('hidden');
-    } else {
-        resultMessage.textContent = `You need to score at least 5 to pass. Your score: ${score}/10`;
-        retryBtn.classList.remove('hidden');
-        nextStageBtn.classList.add('hidden');
-        certificateBtn.classList.add('hidden');
+// Create confetti effect
+function createConfetti() {
+    for (let i = 0; i < 50; i++) {
+        const confetti = document.createElement('div');
+        confetti.className = 'confetti-piece';
+        confetti.style.left = Math.random() * 100 + 'vw';
+        confetti.style.backgroundColor = `hsl(${Math.random() * 360}, 50%, 50%)`;
+        confetti.style.animation = `confetti ${1 + Math.random() * 2}s linear forwards`;
+        document.body.appendChild(confetti);
+        setTimeout(() => confetti.remove(), 3000);
     }
+}
+
+// Show stage transition
+function showStageTransition() {
+    const transition = document.querySelector('.stage-transition');
+    transition.querySelector('.stage-number').textContent = currentStage;
+    transition.classList.add('active');
+    setTimeout(() => transition.classList.remove('active'), 1500);
+}
+
+// Show stage results
+function showStageResults() {
+    clearInterval(timer);
+    const modal = document.querySelector('.celebration-modal');
+    modal.querySelector('.stage-number').textContent = currentStage;
+    modal.classList.add('active');
+    playSound('success-sound');
+    createConfetti();
 }
 
 // Timer functions
 function startTimer() {
-    timeLeft = 300; // 5 minutes per stage
-    updateTimerDisplay();
-    clearInterval(timer);
+    let time = 600; // 10 minutes
     timer = setInterval(() => {
-        timeLeft--;
-        updateTimerDisplay();
-        if (timeLeft <= 0) {
+        time--;
+        const minutes = Math.floor(time / 60);
+        const seconds = time % 60;
+        document.getElementById('time-remaining').textContent = 
+            `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        
+        if (time <= 0) {
             clearInterval(timer);
-            showResults();
+            showStageResults();
         }
     }, 1000);
 }
 
-function updateTimerDisplay() {
-    const minutes = Math.floor(timeLeft / 60);
-    const seconds = timeLeft % 60;
-    document.getElementById('time-remaining').textContent = 
-        `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+// Start next stage
+function startNextStage() {
+    if (currentStage < 3) {
+        currentStage++;
+        currentQuestion = 0;
+        score = 0;
+        document.querySelector('.celebration-modal').classList.remove('active');
+        document.getElementById('current-stage').textContent = currentStage;
+        showStageTransition();
+        setTimeout(() => {
+            loadQuestion();
+            startTimer();
+        }, 1500);
+    } else {
+        // Handle quiz completion
+        alert('Congratulations! You have completed all stages!');
+        window.location.reload();
+    }
 }
 
-// Sound effects
-function playSound(type) {
-    const sound = document.getElementById(`${type}-sound`);
-    if (sound) {
+// Initialize event listeners
+document.addEventListener('DOMContentLoaded', () => {
+    // Sound control
+    document.getElementById('sound-control').addEventListener('click', () => {
+        soundEnabled = !soundEnabled;
+        const icon = document.querySelector('#sound-control i');
+        icon.className = soundEnabled ? 'fas fa-volume-up' : 'fas fa-volume-mute';
+    });
+
+    // Next stage button
+    document.querySelector('.next-stage-btn').addEventListener('click', startNextStage);
+});
+
+// Play sound function
+function playSound(soundId) {
+    if (soundEnabled) {
+        const sound = document.getElementById(soundId);
         sound.currentTime = 0;
         sound.play().catch(error => console.log('Sound play failed:', error));
     }
 }
 
-// Navigation functions
-function startNextStage() {
-    startQuiz(currentStage + 1);
-}
+// Initialize quiz
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM Content Loaded');
+    debugInit();
 
-function retryStage() {
-    startQuiz(currentStage);
-}
+    // Add click event listener to start button
+    const startButton = document.querySelector('.start-btn');
+    if (startButton) {
+        console.log('Start button found');
+        startButton.addEventListener('click', startQuiz);
+    } else {
+        console.error('Start button not found');
+    }
 
-function generateCertificate() {
-    hideAllScreens();
-    document.getElementById('certificate-screen').classList.remove('hidden');
-    document.getElementById('certificate-date').textContent = new Date().toLocaleDateString();
-}
+    // Sound control
+    const soundControl = document.getElementById('sound-control');
+    if (soundControl) {
+        soundControl.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            const icon = soundControl.querySelector('i');
+            if (icon) {
+                icon.className = soundEnabled ? 'fas fa-volume-up' : 'fas fa-volume-mute';
+            }
+        });
+    }
 
-function hideAllScreens() {
-    document.querySelectorAll('.screen').forEach(screen => {
-        screen.classList.add('hidden');
-    });
-}
-
-// Initialize the quiz when the page loads
-window.onload = initializeQuiz;
+    // Next stage button
+    const nextStageBtn = document.querySelector('.next-stage-btn');
+    if (nextStageBtn) {
+        nextStageBtn.addEventListener('click', startNextStage);
+    }
+});

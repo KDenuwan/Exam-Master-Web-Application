@@ -1,4 +1,4 @@
-const quizQuestions = {
+const questions = {
     stage1: [
         {
             question: "Where was the Greek civilization located?",
@@ -306,3 +306,4 @@ const quizQuestions = {
         }
     ]
 };
+

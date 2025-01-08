@@ -4,7 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ExamHub - History Quiz</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
+        
+    </link>
 </head>
 <body>
     <!-- Welcome Screen -->
@@ -15,22 +18,28 @@
         </div>
         
         <div class="quiz-info">
-            <h2>Ancient Civilization of the World</h2>
-            <div class="selection-info">
-                <p>Grade: 7</p>
-                <p>Medium: Sinhala</p>
-                <p>Subject: History</p>
-                <p>Module: 5</p>
+            <div>
+                <h2>Ancient Civilization of the World</h2>          
             </div>
+
+            <div class="selection-info">
+                <p><i class="fas fa-graduation-cap"></i> Grade: 7</p>
+                <p><i class="fas fa-language"></i> Medium: Sinhala</p>
+                <p><i class="fas fa-book"></i> Subject: History</p>
+                <p><i class="fas fa-bookmark"></i> Module: 5</p>
+            </div>
+
             <div class="instructions">
-                <h3>Instructions:</h3>
+                <h3><i class="fas fa-info-circle"></i> Instructions:</h3>
                 <ul>
                     <li>Each stage has 10 multiple choice questions</li>
                     <li>Score at least 5/10 to proceed to the next stage</li>
                     <li>Complete all three stages to earn your certificate</li>
                 </ul>
             </div>
-            <button onclick="startQuiz(1)" class="start-btn">Start Quiz</button>
+            <button onclick="startQuiz()" class="start-btn">
+                <i class="fas fa-play"></i> Start Quiz
+            </button>
         </div>
     </div>
 
@@ -38,7 +47,7 @@
     <div id="quiz-screen" class="screen hidden">
         <div class="quiz-header">
             <h2>Stage <span id="current-stage">1</span></h2>
-            <div id="timer">Time: <span id="time-remaining">00:00</span></div>
+            <div id="timer"><i class="fas fa-clock"></i> <span id="time-remaining">00:00</span></div>
         </div>
 
         <div class="quiz-progress">
@@ -50,52 +59,52 @@
         </div>
 
         <div class="quiz-content">
-            <p id="question-text" class="question"></p>
-            <div id="options-container" class="options"></div>
-            <div id="feedback" class="feedback hidden"></div>
-            <button id="next-btn" onclick="nextQuestion()" class="hidden">Next Question</button>
+            <div id="question-text"></div>
+            <div class="options-container"></div>
         </div>
     </div>
 
-    <!-- Result Screen -->
-    <div id="result-screen" class="screen hidden">
-        <h2>Stage Results</h2>
-        <div id="result-message" class="result-message"></div>
-        <div class="score-display">
-            <p>Your Score: <span id="score">0</span>/10</p>
-        </div>
-        <div class="action-buttons">
-            <button id="next-stage-btn" onclick="startNextStage()" class="hidden">Next Stage</button>
-            <button id="retry-btn" onclick="retryStage()" class="hidden">Retry Stage</button>
-            <button id="get-certificate-btn" onclick="generateCertificate()" class="hidden">Get Certificate</button>
+    <!-- Feedback Overlay -->
+    <div class="feedback-overlay">
+        <div class="feedback-content">
+            <h2></h2>
+            <p></p>
         </div>
     </div>
 
-    <!-- Certificate Screen -->
-    <div id="certificate-screen" class="screen hidden">
-        <div id="certificate" class="certificate">
-            <h2>Certificate of Completion</h2>
-            <div class="certificate-content">
-                <p>This is to certify that</p>
-                <h3>Student Name</h3>
-                <p>has successfully completed</p>
-                <p class="certificate-course">Ancient Civilization of the World</p>
-                <p class="certificate-details">Grade 7 History - Module 5</p>
-                <p class="certificate-date">Date: <span id="certificate-date"></span></p>
-            </div>
+    <!-- Stage Transition -->
+    <div class="stage-transition">
+        <div class="transition-content">
+            <h2>Stage <span class="stage-number">1</span></h2>
+            <p>Get Ready!</p>
         </div>
-        <div class="certificate-actions">
-            <button onclick="window.print()" class="print-btn">Print Certificate</button>
-            <button onclick="startNewQuiz()" class="new-quiz-btn">Start New Quiz</button>
-        </div>
+    </div>
+
+    <!-- Celebration Modal -->
+    <div class="celebration-modal">
+        <div class="icon">🏆</div>
+        <h2>Congratulations!</h2>
+        <p>You've completed Stage <span class="stage-number">1</span>!</p>
+        <button class="next-stage-btn">Continue to Next Stage</button>
+    </div>
+
+    <!-- Floating Score Display -->
+    <div class="floating-score">
+        Score: <span class="current-score">0</span>
+    </div>
+
+    <!-- Sound Control -->
+    <div id="sound-control">
+        <i class="fas fa-volume-up"></i>
     </div>
 
     <!-- Audio Elements -->
-    <audio id="correct-sound" src="assets/sounds/correct.mp3"></audio>
-    <audio id="wrong-sound" src="assets/sounds/wrong.mp3"></audio>
-    <audio id="success-sound" src="assets/sounds/success.mp3"></audio>
+    <audio id="correct-sound" src="/api/placeholder/audio/correct.mp3"></audio>
+    <audio id="wrong-sound" src="/api/placeholder/audio/wrong.mp3"></audio>
+    <audio id="success-sound" src="/api/placeholder/audio/success.mp3"></audio>
 
-    <script src="js/questions.js"></script>
-    <script src="js/quiz.js"></script>
+    <script src="js/questions.js"> </script>
+    <script src="js/quiz.js"> </script>
+        
 </body>
 </html>
